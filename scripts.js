@@ -371,7 +371,7 @@ function createMirror(group, renderTarget, mirrorCamera, posY, posZ, viewX, view
         mirrorPosZ){
     mirrorCamera.position.set(.15, posY, posZ);
     const worldView = new THREE.Vector3(viewX, viewY, viewZ);
-    worldView.applyMatrix4(group.matrixWorld);
+    worldView.applyMatrix4(mirrorCamera.matrixWorld);
     mirrorCamera.lookAt(worldView);
     group.add(mirrorCamera)
 
@@ -401,8 +401,8 @@ function createCar(group, leftRenderTarget, leftMirrorCamera, rightRenderTarget,
     controllableCar.setCamera(camera);
 
     // Left mirror
-    createMirror(group, leftRenderTarget, leftMirrorCamera, cs.mirrorZ, -cs.width/2 - 0.05, -1, 1.0, -cs.width/2-0.5, -.85);
-    createMirror(group, rightRenderTarget, rightMirrorCamera, cs.mirrorZ, cs.width/2 + 0.05, -1, 1.0, cs.width/2+0.5, 0.4);
+    createMirror(group, leftRenderTarget, leftMirrorCamera, cs.mirrorZ, -cs.width/2 - 0.05, -1, 1.0, -cs.width/2-0.4, -.85);
+    createMirror(group, rightRenderTarget, rightMirrorCamera, cs.mirrorZ, cs.width/2 + 0.05, -1, 1.0, cs.width/2+0.4, 0.4);
 
     return controllableCar;
 }
