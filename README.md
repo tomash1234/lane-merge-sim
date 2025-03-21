@@ -1,9 +1,8 @@
 # Lane Merging Simulator  
 
-A simple 3D lane merging simulator. After several near-death experiences while teaching
-my wife how to merge onto a motorway, I decided to create this simulator to help her learn. I aimed to use
-realistic parameters to mimic real-world car acceleration and braking.  Keep in mind that the
-graphics are very simplistic. 
+A simple 3D lane-merging simulator. After a few near-death experiences while teaching my wife how to merge onto a
+motorway, I decided to create this simulator to help her practice safely. It simulates real-world car acceleration 
+and braking using realistic parameters. 
 
 🎮 **[Try it yourself](https://tomash1234.github.io/lane-merge-sim/)**  
 
