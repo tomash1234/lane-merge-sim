@@ -370,7 +370,9 @@ function generateMainRoad(group, ms){
 function createMirror(group, renderTarget, mirrorCamera, posY, posZ, viewX, viewY, viewZ,
         mirrorPosZ){
     mirrorCamera.position.set(.15, posY, posZ);
-    mirrorCamera.lookAt(new THREE.Vector3(viewX, viewY, viewZ));
+    const worldView = new THREE.Vector3(viewX, viewY, viewZ);
+    worldView.applyMatrix4(group.matrixWorld);
+    mirrorCamera.lookAt(worldView);
     group.add(mirrorCamera)
 
     const mirrorGeometry = new THREE.BoxGeometry(0.005, 0.2, 0.3);

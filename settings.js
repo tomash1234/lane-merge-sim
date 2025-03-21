@@ -222,7 +222,7 @@ class LevelProvider {
 class GameProgress {
 
     constructor(){
-        this.level = 2;
+        this.level = 1;
         this.round = 0;
         this.totalFails = 0;
         this.totalWins = 0;
