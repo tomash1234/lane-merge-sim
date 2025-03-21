@@ -20,7 +20,7 @@ and braking using realistic parameters.
 - To advance to the next level, you must successfully merge **three times in a row**.  
 - If you crash, your streak counter resets.
 
-## Feedback
+## 💬 Feedback
 
 - Feel free create an issue with feedback
 - Nice comments will encourage to expanse this project :)
