@@ -428,17 +428,6 @@ function generateCars(scene, group, ms, gs){
     return cars;
 }
 
-function clearScene(scene, mainCamera) {
-    for (let i = scene.children.length - 1; i >= 0; i--) {
-        const object = scene.children[i];
-
-        if (object != mainCamera) {
-            scene.remove(object);
-        }
-    }
-}
-
-
 function initWorld(levelProvider, gameProgress){
     const level = levelProvider.getLevel(gameProgress.level);
     const game = new GameSession(level, gameProgress);
@@ -462,7 +451,7 @@ function initWorld(levelProvider, gameProgress){
         if (event.key === "s" || event.key === "S") moveBackward = true;
         if (event.key === "a" || event.key === "A") moveLeft = true;
         if (event.key === "d" || event.key === "D") moveRight = true;
-        if (event.key === "r" || event.key === "R") controllableCar.reset();
+        if (event.key === "r" || event.key === "R") game.reset();
         if (event.key === "p" || event.key === "P") paused = !paused;
     });
 
