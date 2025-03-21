@@ -451,7 +451,7 @@ function initWorld(levelProvider, gameProgress){
         if (event.key === "s" || event.key === "S") moveBackward = true;
         if (event.key === "a" || event.key === "A") moveLeft = true;
         if (event.key === "d" || event.key === "D") moveRight = true;
-        if (event.key === "r" || event.key === "R") game.reset();
+        if (event.key === "r" || event.key === "R") game.resetLevel();
         if (event.key === "p" || event.key === "P") paused = !paused;
     });
 
