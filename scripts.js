@@ -371,7 +371,7 @@ function createMirror(group, renderTarget, mirrorCamera, posY, posZ, viewX, view
         mirrorPosZ){
     mirrorCamera.position.set(.15, posY, posZ);
     const worldView = new THREE.Vector3(viewX, viewY, viewZ);
-    worldView.applyMatrix4(group.matrixWorld);
+    worldView.applyMatrix4(mirrorCamera.matrixWorld);
     mirrorCamera.lookAt(worldView);
     group.add(mirrorCamera)
 
