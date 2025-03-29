@@ -143,10 +143,18 @@ class ControllableCar extends Car {
     }
 
     left(){
+        if(this.speed < 1 && this.speed > -1){
+            this.steeringAngle = this.cs.maxSteeringAngle;
+            return;
+        }
         this.steeringAngle = this.cs.maxSteeringAngle / (this.speed * .2);
     }
 
     right(){
+        if(this.speed < 1 && this.speed > -1){
+            this.steeringAngle = -this.cs.maxSteeringAngle;
+            return;
+        }
         this.steeringAngle  = -this.cs.maxSteeringAngle / (this.speed * 0.2);
     }
 
