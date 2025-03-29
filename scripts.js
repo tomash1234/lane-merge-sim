@@ -240,7 +240,7 @@ class ControllableCar extends Car {
 
         let turningRadius = this.cs.wheelbase / Math.tan(this.steeringAngle);
         let angularVelocity = 0;
-        if(turningRadius != 0){
+        if(turningRadius > 0.001 || turningRadius < -0.001){
             angularVelocity = this.speed / turningRadius;
         }
 
