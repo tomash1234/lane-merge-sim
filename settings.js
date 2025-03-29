@@ -1,8 +1,9 @@
 
 class CarSettings {
-    constructor(maxSpeed=200 / 3.6, length=4.56, height=1.5, width=1.823, bodyHeight=0.4,
-    maxAcc=3, maxBreakingAcc=-6, color=0xcf04020, maxSteeringAngle=0.3, mass=1200,
-    frontArea=2.5, engineForce=4100, cameraHeight=1.25, mirrorZ=1){
+    constructor(maxSpeed=200 / 3.6, length=4.56, height=1.5, width=1.823, bodyHeight=0.75,
+    maxAcc=3, maxBreakingAcc=-6, color=0xcf04020, maxSteeringAngle=0.25, mass=1200,
+    frontArea=2.5, engineForce=4100, cameraHeight=1.20, cameraOffsetX=0.2, mirrorX=0.98, mirrorY=0.85, wheelbase=2.7, bonnetLength = 1.0,
+        roofLength=0.5, rearRoofLength=1.8){
         this.maxSpeed = maxSpeed;
         this.length = length;
         this.width = width;
@@ -16,7 +17,13 @@ class CarSettings {
         this.frontArea = frontArea;
         this.engineForce = engineForce;
         this.cameraHeight = cameraHeight;
-        this.mirrorZ = mirrorZ;
+        this.mirrorX = mirrorX;
+        this.mirrorY = mirrorY;
+        this.wheelbase = wheelbase;
+        this.bonnetLength = bonnetLength;
+        this.roofLength = roofLength;
+        this.cameraOffsetX = cameraOffsetX;
+        this.rearRoofLength = rearRoofLength;
     }
 }
 

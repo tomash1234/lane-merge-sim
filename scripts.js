@@ -1,4 +1,29 @@
 
+class RearMirror {
+    constructor(posVec, lookVec, resWidth=420, resHeight=360, fov=40,
+            mirrorWidth=0.3, mirrorHeight=0.2){
+        this.group = new THREE.Group();
+        this.renderTarget = new THREE.WebGLRenderTarget(resWidth, resHeight);
+        this.mirrorCamera = new THREE.PerspectiveCamera(fov, 1.0 * resWidth / resHeight, 0.1, 1000);
+
+        const mirrorGeometry = new THREE.BoxGeometry(0.005, mirrorHeight, mirrorWidth);
+        const mirrorMaterial = new THREE.MeshBasicMaterial({ map: this.renderTarget.texture, side: THREE.DoubleSide });
+        this.mirror = new THREE.Mesh(mirrorGeometry, mirrorMaterial);
+        this.mirror.scale.x = -1;
+        this.group.add(this.mirrorCamera);
+        this.group.add(this.mirror);
+        this.group.position.copy(posVec);
+        const worldPosition = new THREE.Vector3();
+        this.mirrorCamera.getWorldPosition(worldPosition);
+        this.mirrorCamera.lookAt(worldPosition.add(lookVec));
+    }
+
+    render(scene, renderer){
+        renderer.setRenderTarget(this.renderTarget);
+        renderer.render(scene, this.mirrorCamera);
+    }
+
+}
 
 class Car {
     constructor(speed, length, height, width, posX, posY, posZ, color) {
@@ -44,12 +69,72 @@ class ControllableCar extends Car {
         this.originalSpeed = 0;
         this.steeringAngle = 0;
         this.group.position.set(0, posZ, 0);
+        this.cameraViewIndex = 0;
         this.originPos = cameraGroup.position.clone();
         cameraGroup.add(this.group);
-        this.bodyBackGeo = new THREE.BoxGeometry(cs.length/2, cs.height, cs.width);
-        this.rearMesh = new THREE.Mesh( this.bodyBackGeo, this.bodyMaterial );
-        this.rearMesh.position.set(-cs.length / 4, cs.height/2, 0);
-        this.group.add(this.rearMesh );
+
+
+        //Car roof Front
+        this.carRoofGeo = new THREE.BoxGeometry(cs.roofLength, 0.05, cs.width);
+        this.carRoofMesh = new THREE.Mesh( this.carRoofGeo, this.bodyMaterial );
+        this.carRoofMesh.position.set(cs.roofLength/2, cs.height - 0.025, 0);
+        this.group.add(this.carRoofMesh);
+
+        //Car roof Rear
+        this.carRearRoofGeo = new THREE.BoxGeometry(cs.rearRoofLength, 0.05, cs.width);
+        this.carRearRoofMesh = new THREE.Mesh( this.carRearRoofGeo, this.bodyMaterial );
+        this.carRearRoofMesh.position.set(-cs.rearRoofLength/2, cs.height - 0.025, 0);
+        this.group.add(this.carRearRoofMesh);
+
+        // Front columns
+        const columnLengthX = cs.length /2 - cs.bonnetLength - cs.roofLength;
+        const columnLength = Math.sqrt((cs.height - cs.bodyHeight)*(cs.height - cs.bodyHeight)
+                + columnLengthX * columnLengthX);
+        this.createSymmetricColumn(cs.length / 2 - cs.bonnetLength - columnLengthX / 2,
+                        (cs.bodyHeight + cs.height) / 2,
+                        -cs.width / 2  + 0.025, -Math.acos(columnLengthX / columnLength), columnLength);
+
+        // Rear columns
+        const rearColumnLengthX = cs.length /2 - cs.rearRoofLength;
+        const rearColumnLength = Math.sqrt((cs.height - cs.bodyHeight)*(cs.height - cs.bodyHeight)
+                + rearColumnLengthX * rearColumnLengthX);
+        this.createSymmetricColumn(-cs.rearRoofLength - rearColumnLengthX / 2,
+                        (cs.bodyHeight + cs.height) / 2,
+                        -cs.width / 2  + 0.025, Math.acos(rearColumnLengthX / rearColumnLength), rearColumnLength);
+
+        //Middle collumn
+        this.createSymmetricColumn(-0.2,
+                        (cs.bodyHeight + cs.height) / 2,
+                        -cs.width / 2  + 0.025, Math.PI/2, -cs.bodyHeight + cs.height, 0.05, 0.15);
+        this.createSymmetricColumn(-1.3,
+                        (cs.bodyHeight + cs.height) / 2,
+                        -cs.width / 2  + 0.025, Math.PI/2, -cs.bodyHeight + cs.height, 0.05, 0.15);
+
+
+
+
+        this.leftMirror = new RearMirror(new THREE.Vector3(cs.mirrorX, cs.mirrorY, -cs.width/2 - 0.15),
+                                     new THREE.Vector3(-1, 0, -0.3));
+        this.group.add(this.leftMirror.group);
+        this.rightMirror = new RearMirror(new THREE.Vector3(cs.mirrorX, cs.mirrorY, cs.width/2 + 0.15),
+                                     new THREE.Vector3(-1, 0, +0.3));
+        this.group.add(this.rightMirror.group);
+        this.panoRearMirror = new RearMirror(new THREE.Vector3(cs.mirrorX - 0.35, cs.height - 0.08, 0),
+                                     new THREE.Vector3(-1, -.1, 0), 420, 120, 16, 0.3, 0.07);
+        this.group.add(this.panoRearMirror.group);
+
+    }
+
+    createSymmetricColumn(x, y, z, rotationZ, length, size=0.05, width=0.05){
+        const columnGeo = new THREE.BoxGeometry(length, width, size);
+        const columnMesh = new THREE.Mesh(columnGeo, this.bodyMaterial );
+        columnMesh.position.set(x, y, z);
+        columnMesh.rotation.z = rotationZ;
+        const columnMesh2 = new THREE.Mesh(columnGeo, this.bodyMaterial );
+        columnMesh2.position.set(x, y, -z);
+        columnMesh2.rotation.z = rotationZ;
+        this.group.add(columnMesh);
+        this.group.add(columnMesh2);
     }
 
     accelerate(){
@@ -58,11 +143,11 @@ class ControllableCar extends Car {
     }
 
     left(){
-        this.steeringAngle = this.cs.maxSteeringAngle;
+        this.steeringAngle = this.cs.maxSteeringAngle / (this.speed * .2);
     }
 
     right(){
-        this.steeringAngle  = -this.cs.maxSteeringAngle;
+        this.steeringAngle  = -this.cs.maxSteeringAngle / (this.speed * 0.2);
     }
 
     resetSteering(){
@@ -88,6 +173,39 @@ class ControllableCar extends Car {
         this.camera = camera;
     }
 
+    toggleCameraView(){
+        this.cameraViewIndex = (this.cameraViewIndex + 1) % 5;
+
+        const worldPosition = new THREE.Vector3();
+        switch(this.cameraViewIndex){
+        case 0:
+            this.camera.position.set(this.cs.cameraOffsetX, this.cs.cameraHeight, -0.3);
+            this.camera.getWorldPosition(worldPosition);
+            this.camera.lookAt(worldPosition.add(new THREE.Vector3(1, 0, 0)));
+            break;
+        case 1:
+            this.camera.position.set(-6, 3, 0);
+            this.camera.getWorldPosition(worldPosition);
+            this.camera.lookAt(worldPosition.add(new THREE.Vector3(0.1, 0, 0)));
+            break;
+        case 2:
+            this.camera.position.set(0, 8, 0);
+            this.camera.getWorldPosition(worldPosition);
+            this.camera.lookAt(worldPosition.add(new THREE.Vector3(0.01, -8, 0)));
+            break;
+        case 3:
+            this.camera.position.set(0, 1, -5);
+            this.camera.getWorldPosition(worldPosition);
+            this.camera.lookAt(worldPosition.add(new THREE.Vector3(0, 0, 5)));
+            break;
+        case 4:
+            this.camera.position.set(this.cs.cameraOffsetX, this.cs.cameraHeight, -0.3);
+            this.camera.getWorldPosition(worldPosition);
+            this.camera.lookAt(worldPosition.add(new THREE.Vector3(-2, 0, 0.1)));
+            break;
+        }
+    }
+
     handleAcceleration(dt){
         const Cd = 0.3;
         const rho = 1.225;
@@ -107,29 +225,33 @@ class ControllableCar extends Car {
         this.speed -= (dragFactor * this.speed ** 2 + 0.05) * dt;
     }
 
+    render(scene, renderer){
+        this.leftMirror.render(scene, renderer);
+        this.rightMirror.render(scene, renderer);
+        this.panoRearMirror.render(scene, renderer);
+    }
+
     moveGroup(deltaTime){
         const dt = deltaTime / 1000;
         this.handleAcceleration(dt);
-        //this.airDragEffect(dt);
         if(this.speed < 0){
             this.speed = 0;
         }
-        var ry = 0;
-        if(this.speed > 0){
-            ry = this.speed / 15;
-            if(ry > 1){
-                ry = 1;
-            }
+
+        let turningRadius = this.cs.wheelbase / Math.tan(this.steeringAngle);
+        let angularVelocity = 0;
+        if(turningRadius != 0){
+            angularVelocity = this.speed / turningRadius;
         }
-        const rotationQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0),
-        this.steeringAngle * dt * ry);
-        this.cameraGroup.quaternion.multiply(rotationQuaternion);
+
+        this.cameraGroup.rotation.y += angularVelocity * dt;
+        const rY = this.cameraGroup.rotation.y;
+
         const dX = this.speed * dt;
         const forward = new THREE.Vector3(1, 0, 0);
 
         forward.applyQuaternion(this.cameraGroup.quaternion);
         forward.multiplyScalar(dX);
-
         this.cameraGroup.position.add(forward);
     }
 
@@ -184,10 +306,6 @@ class GameSession {
     initScene(){
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color("#87CEEB");
-        this.leftMirrorRenderTarget = new THREE.WebGLRenderTarget(420, 360);
-        this.rightMirrorRenderTarget = new THREE.WebGLRenderTarget(420, 360);
-        this.leftMirrorCamera = new THREE.PerspectiveCamera(40, 420 / 360.0, 0.1, 1000);
-        this.rightMirrorCamera = new THREE.PerspectiveCamera(40, 420 / 360.0, 0.1, 1000);
 
         this.renderer = new THREE.WebGLRenderer({antialias: true});
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -209,8 +327,7 @@ class GameSession {
 
         this.carGroup = new THREE.Group();
 
-        this.controllableCar = createCar(this.carGroup, this.leftMirrorRenderTarget, this.leftMirrorCamera,
-                                                    this.rightMirrorRenderTarget, this.rightMirrorCamera, cs, ms);
+        this.controllableCar = createCar(this.carGroup, cs, ms);
 
         this.scene.add(this.carGroup);
         this.carsGroup = new THREE.Group();
@@ -232,13 +349,9 @@ class GameSession {
     }
 
     render(){
-        this.renderer.setRenderTarget(this.leftMirrorRenderTarget);
-        this.renderer.render(this.scene, this.leftMirrorCamera);
-        this.renderer.setRenderTarget(this.rightMirrorRenderTarget);
-        this.renderer.render(this.scene, this.rightMirrorCamera);
         this.renderer.setRenderTarget(null);
         this.renderer.render(this.scene, this.camera);
-
+        this.controllableCar.render(this.scene, this.renderer);
         this.updateUI();
     }
 
@@ -346,14 +459,11 @@ function generateMainRoad(group, ms){
     createDashLine(group, ms.mergeRoadStart + ms.mergingFullLineLength, ms.mergingRoadLength,
         ms.mainRoadCenter + ms.mainRoadWidth / 2.0);
 
-
-
     // barriers Main Road
     createBarriers(group, ms.roadStart, ms.mainRoadLength, ms.mainRoadCenter - ms.mainRoadWidth - ms.mainRoadWidth / 2.0);
     createBarriers(group, ms.roadStart, ms.mergeRoadStart - ms.roadStart, ms.mainRoadCenter + ms.mainRoadWidth /2.0);
     createBarriers(group, ms.mergeRoadStart + ms.mergingRoadLength, ms.mainRoadLength - (ms.mergeRoadStart-ms.roadStart)
         - ms.mergingRoadLength, ms.mainRoadCenter + ms.mainRoadWidth /2.0);
-
 
     // Merging lane
     createRoad(group, ms.mergeRoadStart, ms.mergingRoadLength, ms.mergingRoadCenter, ms.mergingRoadWidth);
@@ -367,43 +477,20 @@ function generateMainRoad(group, ms){
         ms.mainRoadCenter - ms.mainRoadWidth / 2.0, 2 * ms.mainRoadWidth);
 }
 
-function createMirror(group, renderTarget, mirrorCamera, posY, posZ, viewX, viewY, viewZ,
-        mirrorPosZ){
-    mirrorCamera.position.set(.15, posY, posZ);
-    const worldView = new THREE.Vector3(viewX, viewY, viewZ);
-    worldView.applyMatrix4(mirrorCamera.matrixWorld);
-    mirrorCamera.lookAt(worldView);
-    group.add(mirrorCamera)
-
-    const mirrorGeometry = new THREE.BoxGeometry(0.005, 0.2, 0.3);
-    const mirrorMaterial = new THREE.MeshBasicMaterial({ map: renderTarget.texture, side: THREE.DoubleSide });
-    const mirror = new THREE.Mesh(mirrorGeometry, mirrorMaterial);
-    mirror.scale.x = -1;
-    mirror.position.set(0.60, 0.9, mirrorPosZ);
-    group.add(mirror);
-}
-
-function createCar(group, leftRenderTarget, leftMirrorCamera, rightRenderTarget, rightMirrorCamera, cs, ms){
+function createCar(group, cs, ms){
     const renWidth = window.innerWidth;
     const renHeight = window.innerHeight;
-    const carLength = 4.56;
-    const carWidth = 1.823;
-    const bodyHeight = 0.4;
-    const camera = new THREE.PerspectiveCamera(75, renWidth/renHeight, 0.01, 1000);
-    camera.position.set(0, cs.cameraHeight, -0.4);
-    camera.lookAt(new THREE.Vector3(1, 1.2, -0.4));
-
+    const camera = new THREE.PerspectiveCamera(90, renWidth/renHeight, 0.01, 1000);
+    const worldPosition = new THREE.Vector3();
+    camera.position.set(cs.cameraOffsetX, cs.cameraHeight, -0.3);
+    camera.getWorldPosition(worldPosition);
+    camera.lookAt(worldPosition.add(new THREE.Vector3(1, 0, 0)));
     group.add(camera);
 
     group.position.set(ms.mergeRoadStart, 0, ms.mergingRoadCenter);
     var controllableCar = new ControllableCar(cs, group, 0);
     controllableCar.setOriginalSpeed(ms.startingSpeed);
     controllableCar.setCamera(camera);
-
-    // Left mirror
-    createMirror(group, leftRenderTarget, leftMirrorCamera, cs.mirrorZ, -cs.width/2 - 0.05, -1, 1.0, -cs.width/2-0.4, -.85);
-    createMirror(group, rightRenderTarget, rightMirrorCamera, cs.mirrorZ, cs.width/2 + 0.05, -1, 1.0, cs.width/2+0.4, 0.4);
-
     return controllableCar;
 }
 
@@ -455,6 +542,7 @@ function initWorld(levelProvider, gameProgress){
         if (event.key === "d" || event.key === "D") moveRight = true;
         if (event.key === "r" || event.key === "R") game.resetLevel();
         if (event.key === "p" || event.key === "P") paused = !paused;
+        if (event.key === "c" || event.key === "C") game.controllableCar.toggleCameraView();
     });
 
     document.addEventListener("keyup", (event) => {
@@ -463,6 +551,7 @@ function initWorld(levelProvider, gameProgress){
         if (event.key === "a" || event.key === "A") moveLeft = false;
         if (event.key === "d" || event.key === "D") moveRight = false;
     });
+
 
     var levelEnded = false;
 
@@ -513,7 +602,4 @@ function initWorld(levelProvider, gameProgress){
     }
 
     animate();
-
 }
-
-
